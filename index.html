@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Drift Boss</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#f59b2e;
+  font-family:Arial,sans-serif;
+  user-select:none;
+  touch-action:none;
+}
+
+#game{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:#f59b2e;
+}
+
+canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+
+.hud{
+  position:absolute;
+  top:18px;
+  left:20px;
+  right:20px;
+  z-index:10;
+  display:flex;
+  justify-content:space-between;
+  color:white;
+  font-weight:900;
+  text-shadow:3px 3px #111;
+  pointer-events:none;
+}
+
+.score{
+  font-size:38px;
+}
+
+.best{
+  text-align:center;
+  font-size:14px;
+  line-height:.8;
+}
+
+.best strong{
+  display:block;
+  font-size:34px;
+  margin-top:6px;
+}
+
+.logo{
+  position:absolute;
+  z-index:5;
+  top:14%;
+  left:50%;
+  transform:translateX(-50%) rotate(-5deg);
+  color:white;
+  font-size:clamp(55px,10vw,115px);
+  font-weight:1000;
+  font-style:italic;
+  line-height:.75;
+  text-align:center;
+  white-space:nowrap;
+  -webkit-text-stroke:5px #111;
+  text-shadow:7px 8px #111;
+  pointer-events:none;
+}
+
+.logo span{
+  display:block;
+  font-size:.82em;
+}
+
+#play{
+  position:absolute;
+  z-index:12;
+  left:50%;
+  bottom:18%;
+  transform:translateX(-50%);
+  width:190px;
+  height:76px;
+  border:5px solid #06394d;
+  background:#0bb7e8;
+  box-shadow:0 8px #06394d;
+  color:white;
+  font-size:45px;
+  font-weight:900;
+}
+
+#play:active{
+  transform:translate(-50%,7px);
+  box-shadow:0 2px #06394d;
+}
+
+.menuButtons{
+  position:absolute;
+  z-index:12;
+  left:50%;
+  bottom:5%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+}
+
+.menuButtons button{
+  width:90px;
+  height:75px;
+  border:4px solid #06394d;
+  background:#0bb7e8;
+  box-shadow:0 6px #06394d;
+  color:white;
+  font-size:28px;
+  font-weight:900;
+}
+
+.menuButtons small{
+  display:block;
+  font-size:9px;
+}
+
+.touch{
+  display:none;
+  position:absolute;
+  z-index:20;
+  left:18px;
+  right:18px;
+  bottom:22px;
+  justify-content:space-between;
+}
+
+.touch button{
+  width:85px;
+  height:65px;
+  border:4px solid #06394d;
+  background:#0bb7e8dd;
+  box-shadow:0 5px #06394d;
+  color:white;
+  font-size:30px;
+  font-weight:900;
+}
+
+#gameOver{
+  position:absolute;
+  inset:0;
+  z-index:50;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:#0009;
+}
+
+.panel{
+  min-width:290px;
+  padding:28px;
+  text-align:center;
+  background:white;
+  color:#111;
+  border:5px solid #111;
+  box-shadow:9px 9px #111;
+}
+
+.panel h2{
+  margin:0;
+  font-size:38px;
+}
+
+.finalScore{
+  font-size:65px;
+  font-weight:1000;
+}
+
+.panel button{
+  margin-top:15px;
+  padding:13px 25px;
+  border:4px solid #111;
+  background:#0bb7e8;
+  font-weight:900;
+  font-size:17px;
+}
+
+@media(max-width:700px){
+
+  .touch{
+    display:flex;
+  }
+
+  .menuButtons{
+    transform:translateX(-50%) scale(.8);
+    bottom:17%;
+  }
+
+  #play{
+    bottom:28%;
+    width:155px;
+    height:65px;
+  }
+
+  .logo{
+    top:16%;
+    font-size:62px;
+    -webkit-text-stroke:3px #111;
+    text-shadow:5px 6px #111;
+  }
+
+  .score{
+    font-size:30px;
+  }
+
+  .best strong{
+    font-size:26px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<canvas id="canvas"></canvas>
+
+<div class="hud">
+  <div class="score">🪙 <span id="score">0</span></div>
+
+  <div class="best">
+    BEST
+    <strong id="best">0</strong>
+  </div>
+</div>
+
+<div class="logo">
+  DRIFT
+  <span>BOSS</span>
+</div>
+
+<button id="play">▶</button>
+
+<div class="menuButtons">
+  <button onclick="alert('Garage kommt bald!')">
+    🚗
+    <small>GARAGE</small>
+  </button>
+
+  <button onclick="alert('Missionen kommen bald!')">
+    🏁
+    <small>MISSIONS</small>
+  </button>
+
+  <button onclick="alert('A/D oder Pfeiltasten zum Driften!')">
+    ⚙️
+    <small>SETTINGS</small>
+  </button>
+</div>
+
+<div class="touch">
+  <button id="left">◀</button>
+  <button id="right">▶</button>
+</div>
+
+<div id="gameOver">
+
+  <div class="panel">
+
+    <h2>CRASH! 💥</h2>
+
+    <div>DEIN SCORE</div>
+
+    <div class="finalScore" id="finalScore">
+      0
+    </div>
+
+    <div>
+      BEST:
+      <b id="finalBest">0</b>
+    </div>
+
+    <button id="again">
+      NOCHMAL FAHREN
+    </button>
+
+  </div>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+const scoreText =
+document.getElementById("score");
+
+const bestText =
+document.getElementById("best");
+
+const play =
+document.getElementById("play");
+
+const gameOver =
+document.getElementById("gameOver");
+
+const finalScore =
+document.getElementById("finalScore");
+
+const finalBest =
+document.getElementById("finalBest");
+
+let W;
+let H;
+
+let running=false;
+
+let score=0;
+
+let best=
+Number(localStorage.getItem("driftBossBest")||0);
+
+let x=.5;
+
+let steer=0;
+
+let speed=1;
+
+let world=0;
+
+let last=0;
+
+bestText.textContent=best;
+
+
+/* RESIZE */
+
+function resize(){
+
+  W=innerWidth;
+  H=innerHeight;
+
+  const dpr=
+  Math.min(devicePixelRatio||1,2);
+
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+
+  canvas.style.width=W+"px";
+  canvas.style.height=H+"px";
+
+  ctx.setTransform(
+    dpr,0,0,dpr,0,0
+  );
+}
+
+addEventListener("resize",resize);
+
+resize();
+
+
+/* STRASSENKURVE */
+
+function roadCenter(t){
+
+  return .5
+    + Math.sin(t*.0012)*.17
+    + Math.sin(t*.00043)*.10;
+
+}
+
+
+/* ZEICHNEN */
+
+function draw(){
+
+  ctx.clearRect(0,0,W,H);
+
+  /* ORANGE BACKGROUND */
+
+  ctx.fillStyle="#f59b2e";
+
+  ctx.fillRect(0,0,W,H);
+
+
+  /* HINTERGRUND-MUSTER */
+
+  ctx.save();
+
+  ctx.globalAlpha=.10;
+
+  ctx.strokeStyle="#fff";
+
+  ctx.lineWidth=3;
+
+  for(
+    let i=-H;
+    i<W+H;
+    i+=32
+  ){
+
+    ctx.beginPath();
+
+    ctx.moveTo(i,0);
+
+    ctx.lineTo(i+H,H);
+
+    ctx.stroke();
+
+  }
+
+  ctx.restore();
+
+
+  /* STRASSE */
+
+  const pieces=60;
+
+  const step=H/pieces;
+
+  const topWidth=W*.22;
+
+  const bottomWidth=
+    Math.min(W*.70,700);
+
+
+  for(
+    let i=pieces-1;
+    i>=0;
+    i--
+  ){
+
+    const p=i/pieces;
+
+    const y=i*step;
+
+    const c=
+      roadCenter(
+        world+i*20
+      );
+
+    const next=
+      roadCenter(
+        world+(i+1)*20
+      );
+
+    const width=
+      topWidth+
+      (1-p)*
+      (bottomWidth-topWidth);
+
+    const nextWidth=
+      topWidth+
+      (1-(i+1)/pieces)*
+      (bottomWidth-topWidth);
+
+
+    ctx.fillStyle=
+      i%2
+      ? "#d7f4a6"
+      : "#c9ed93";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      c*W-width/2,
+      y
+    );
+
+    ctx.lineTo(
+      c*W+width/2,
+      y
+    );
+
+    ctx.lineTo(
+      next*W+nextWidth/2,
+      y+step
+    );
+
+    ctx.lineTo(
+      next*W-nextWidth/2,
+      y+step
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /* STRASSENRAND */
+
+    ctx.strokeStyle="#143c20";
+
+    ctx.lineWidth=6;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      c*W-width/2,
+      y
+    );
+
+    ctx.lineTo(
+      next*W-nextWidth/2,
+      y+step
+    );
+
+    ctx.stroke();
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      c*W+width/2,
+      y
+    );
+
+    ctx.lineTo(
+      next*W+nextWidth/2,
+      y+step
+    );
+
+    ctx.stroke();
+
+  }
+
+
+  /* MITTEL-LINIE */
+
+  ctx.strokeStyle="#fff";
+
+  ctx.lineWidth=5;
+
+  ctx.setLineDash([30,45]);
+
+  ctx.beginPath();
+
+  for(let i=0;i<pieces;i+=2){
+
+    const y=i*step;
+
+    const c=
+      roadCenter(
+        world+i*20
+      );
+
+    if(i===0)
+      ctx.moveTo(c*W,y);
+    else
+      ctx.lineTo(c*W,y);
+
+  }
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+
+  /* AUTO */
+
+  drawCar();
+
+}
+
+
+/* AUTO */
+
+function drawCar(){
+
+  const cx=x*W;
+
+  const cy=H*.68;
+
+
+  ctx.save();
+
+  ctx.translate(cx,cy);
+
+  ctx.rotate(
+    steer*.18
+  );
+
+
+  /* SCHATTEN */
+
+  ctx.fillStyle="#0005";
+
+  ctx.fillRect(
+    -27,
+    -28,
+    54,
+    65
+  );
+
+
+  /* REIFEN */
+
+  ctx.fillStyle="#111";
+
+  ctx.fillRect(
+    -28,-25,9,22
+  );
+
+  ctx.fillRect(
+    19,-25,9,22
+  );
+
+  ctx.fillRect(
+    -28,10,9,22
+  );
+
+  ctx.fillRect(
+    19,10,9,22
+  );
+
+
+  /* KAROSSERIE */
+
+  ctx.fillStyle="#ed3942";
+
+  ctx.fillRect(
+    -22,-40,44,80
+  );
+
+  ctx.strokeStyle="#111";
+
+  ctx.lineWidth=4;
+
+  ctx.strokeRect(
+    -22,-40,44,80
+  );
+
+
+  /* FENSTER */
+
+  ctx.fillStyle="#48c6dc";
+
+  ctx.fillRect(
+    -16,-29,32,22
+  );
+
+  ctx.fillRect(
+    -16,1,32,18
+  );
+
+
+  ctx.strokeStyle="#111";
+
+  ctx.strokeRect(
+    -16,-29,32,22
+  );
+
+  ctx.strokeRect(
+    -16,1,32,18
+  );
+
+
+  /* SCHEINWERFER */
+
+  ctx.fillStyle="#ffe76b";
+
+  ctx.fillRect(
+    -15,29,10,5
+  );
+
+  ctx.fillRect(
+    5,29,10,5
+  );
+
+
+  /* SPOILER */
+
+  ctx.fillStyle="#222";
+
+  ctx.fillRect(
+    -27,-46,54,6
+  );
+
+
+  ctx.restore();
+
+}
+
+
+/* SPIEL STARTEN */
+
+function start(){
+
+  running=true;
+
+  score=0;
+
+  x=.5;
+
+  steer=0;
+
+  speed=1;
+
+  world=0;
+
+  scoreText.textContent="0";
+
+  gameOver.style.display="none";
+
+  play.style.display="none";
+
+  last=performance.now();
+
+  requestAnimationFrame(loop);
+
+}
+
+
+/* CRASH */
+
+function crash(){
+
+  running=false;
+
+  const result=
+    Math.floor(score);
+
+
+  if(result>best){
+
+    best=result;
+
+    localStorage.setItem(
+      "driftBossBest",
+      best
+    );
+
+  }
+
+
+  bestText.textContent=best;
+
+  finalScore.textContent=result;
+
+  finalBest.textContent=best;
+
+  gameOver.style.display="flex";
+
+  play.style.display="block";
+
+}
+
+
+/* GAME LOOP */
+
+function loop(time){
+
+  if(!running)
+    return;
+
+
+  const dt=
+    Math.min(
+      32,
+      time-last
+    );
+
+  last=time;
+
+
+  speed=
+    Math.min(
+      7,
+      speed+dt*.0007
+    );
+
+
+  world+=
+    speed*
+    dt*
+    .001;
+
+
+  const center=
+    roadCenter(
+      world+1200
+    );
+
+
+  x+=
+    steer*
+    dt*
+    (.0013+
+    speed*.00018);
+
+
+  /* AUTO DREHEN */
+
+  scoreText.textContent=
+    Math.floor(score);
+
+
+  score+=
+    dt*.025*
+    (.7+speed*.3);
+
+
+  /*
+   Je länger man fährt,
+   desto schwieriger wird es.
+  */
+
+  const allowed=
+    .28-
+    Math.min(
+      .08,
+      score/3000
+    );
+
+
+  if(
+    Math.abs(x-center)
+    >allowed
+  ){
+
+    crash();
+
+    return;
+
+  }
+
+
+  draw();
+
+
+  requestAnimationFrame(loop);
+
+}
+
+
+/* STEUERUNG */
+
+function setSteer(value){
+
+  steer=value;
+
+}
+
+
+/* TASTATUR */
+
+addEventListener(
+  "keydown",
+  e=>{
+
+    if(
+      e.key==="ArrowLeft" ||
+      e.key.toLowerCase()==="a"
+    ){
+
+      setSteer(-1);
+
+      e.preventDefault();
+
+    }
+
+
+    if(
+      e.key==="ArrowRight" ||
+      e.key.toLowerCase()==="d"
+    ){
+
+      setSteer(1);
+
+      e.preventDefault();
+
+    }
+
+  }
+);
+
+
+addEventListener(
+  "keyup",
+  e=>{
+
+    if(
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "a",
+        "A",
+        "d",
+        "D"
+      ].includes(e.key)
+    ){
+
+      setSteer(0);
+
+    }
+
+  }
+);
+
+
+/* TOUCH */
+
+function touchButton(
+  element,
+  value
+){
+
+  element.addEventListener(
+    "pointerdown",
+    e=>{
+
+      e.preventDefault();
+
+      setSteer(value);
+
+    }
+  );
+
+
+  for(
+    const event of
+    [
+      "pointerup",
+      "pointercancel",
+      "pointerleave"
+    ]
+  ){
+
+    element.addEventListener(
+      event,
+      ()=>setSteer(0)
+    );
+
+  }
+
+}
+
+
+touchButton(
+  document.getElementById("left"),
+  -1
+);
+
+touchButton(
+  document.getElementById("right"),
+  1
+);
+
+
+/* BUTTONS */
+
+play.onclick=start;
+
+document
+  .getElementById("again")
+  .onclick=start;
+
+
+/* STARTBILD */
+
+draw();
+
+</script>
+
+</body>
+</html>
